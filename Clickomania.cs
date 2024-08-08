@@ -19,6 +19,7 @@ namespace Clickomania
         public Form1()
         {
             InitializeComponent();
+            this.Text = "Кликомания!"; // Установка заголовка формы
             LoadScores();
             this.BackColor = Color.LightBlue; // Сплошной цвет фона
             ShowMainMenu();
@@ -136,11 +137,12 @@ namespace Clickomania
             // Создание и настройка метки для счета
             Label scoreLabel = new Label
             {
-                Text = "Score: 0",
+                Text = "Счёт: 0",
                 Location = new System.Drawing.Point(10, 10),
                 Font = new Font("Arial", 12, FontStyle.Bold),
                 ForeColor = Color.White,
-                BackColor = Color.Transparent
+                BackColor = Color.Transparent,
+                AutoSize = true
             };
             scoreLabel.Name = "scoreLabel";
             Controls.Add(scoreLabel);
@@ -148,11 +150,12 @@ namespace Clickomania
             // Создание и настройка метки для оставшегося времени
             Label timerLabel = new Label
             {
-                Text = "Time left: 30",
+                Text = "Оставшееся время: 30",
                 Location = new System.Drawing.Point(10, 40),
                 Font = new Font("Arial", 12, FontStyle.Bold),
                 ForeColor = Color.White,
-                BackColor = Color.Transparent
+                BackColor = Color.Transparent,
+                AutoSize = true
             };
             timerLabel.Name = "timerLabel";
             Controls.Add(timerLabel);
@@ -169,7 +172,7 @@ namespace Clickomania
             if (!isPaused && timeLeft > 0)
             {
                 timeLeft--;
-                Controls["timerLabel"].Text = "Time left: " + timeLeft;
+                Controls["timerLabel"].Text = "Оставшееся время: " + timeLeft;
 
                 // Добавьте логику появления объектов для кликов
                 CreateClickableObject();
@@ -186,13 +189,13 @@ namespace Clickomania
             score = 0;
             timeLeft = 30;
             gameTimer.Start();
-            Controls["scoreLabel"].Text = "Score: 0";
-            Controls["timerLabel"].Text = "Time left: 30";
+            Controls["scoreLabel"].Text = "Счёт: 0";
+            Controls["timerLabel"].Text = "Оставшееся время: 30";
         }
 
         private void EnterNameAndSaveScore()
         {
-            string name = Prompt.ShowDialog("Введите ваше имя", "Игра окончена! Ваш результат: " + score);
+            string name = Prompt.ShowDialog("Введите ваше имя:", "Игра окончена! Ваш результат: " + score);
             if (!string.IsNullOrWhiteSpace(name))
             {
                 scores.Add((name, score));
@@ -212,6 +215,13 @@ namespace Clickomania
         {
             Controls.Clear();
 
+            // Создание панели для таблицы рекордов
+            Panel scoresPanel = new Panel
+            {
+                Dock = DockStyle.Fill
+            };
+            Controls.Add(scoresPanel);
+
             // Заголовок
             Label title = new Label
             {
@@ -221,8 +231,9 @@ namespace Clickomania
                 BackColor = Color.Transparent,
                 AutoSize = true
             };
-            title.Location = new Point((this.ClientSize.Width - title.Width) / 2, (this.ClientSize.Height - (scores.Count * 30 + 40)) / 2);
-            Controls.Add(title);
+            title.TextAlign = ContentAlignment.MiddleCenter;
+
+            scoresPanel.Controls.Add(title);
 
             for (int i = 0; i < scores.Count; i++)
             {
@@ -235,8 +246,7 @@ namespace Clickomania
                     AutoSize = true,
                     TextAlign = ContentAlignment.MiddleCenter // Центрирование текста
                 };
-                scoreLabel.Location = new Point((this.ClientSize.Width - scoreLabel.Width) / 2, title.Bottom + 10 + i * 30);
-                Controls.Add(scoreLabel);
+                scoresPanel.Controls.Add(scoreLabel);
             }
 
             // Кнопка "Назад"
@@ -249,32 +259,36 @@ namespace Clickomania
                 Size = new Size(100, 50)
             };
             backButton.Click += (s, e) => ShowMainMenu();
-            Controls.Add(backButton);
+            scoresPanel.Controls.Add(backButton);
 
-            this.Resize += (s, e) => { RecenterScores(); };
+            // Центрирование содержимого панели
+            CenterPanelContent(scoresPanel);
+
+            this.Resize += (s, e) => { CenterPanelContent(scoresPanel); };
+        }
+
+        private void CenterPanelContent(Panel panel)
+        {
+            int totalHeight = 0;
+            foreach (Control control in panel.Controls)
+            {
+                totalHeight += control.Height;
+            }
+
+            int yOffset = (panel.ClientSize.Height - totalHeight) / 2;
+            foreach (Control control in panel.Controls)
+            {
+                control.Location = new Point((panel.ClientSize.Width - control.Width) / 2, yOffset);
+                yOffset += control.Height + 10; // Добавление отступа между элементами
+            }
         }
 
         private void RecenterScores()
         {
-            Label title = Controls.OfType<Label>().FirstOrDefault(l => l.Text == "Таблица Рекордов");
-            if (title != null)
+            Panel scoresPanel = Controls.OfType<Panel>().FirstOrDefault();
+            if (scoresPanel != null)
             {
-                title.Location = new Point((this.ClientSize.Width - title.Width) / 2, (this.ClientSize.Height - (scores.Count * 30 + 40)) / 2);
-                int startY = title.Bottom + 10;
-                for (int i = 0; i < scores.Count; i++)
-                {
-                    Label scoreLabel = Controls.OfType<Label>().Skip(i + 1).FirstOrDefault();
-                    if (scoreLabel != null)
-                    {
-                        scoreLabel.Location = new Point((this.ClientSize.Width - scoreLabel.Width) / 2, startY + i * 30);
-                    }
-                }
-
-                Button backButton = Controls.OfType<Button>().FirstOrDefault(b => b.Text == "Назад");
-                if (backButton != null)
-                {
-                    backButton.Location = new Point((this.ClientSize.Width - backButton.Width) / 2, startY + scores.Count * 30 + 10);
-                }
+                CenterPanelContent(scoresPanel);
             }
         }
 
@@ -296,7 +310,7 @@ namespace Clickomania
             clickableObject.Click += (s, e) =>
             {
                 score++;
-                Controls["scoreLabel"].Text = "Score: " + score;
+                Controls["scoreLabel"].Text = "Счёт: " + score;
                 Controls.Remove(clickableObject);
             };
             Controls.Add(clickableObject);
@@ -401,20 +415,68 @@ namespace Clickomania
         {
             Form prompt = new Form
             {
-                Width = 500,
-                Height = 150,
+                Width = 400,
+                Height = 200,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
                 Text = caption,
-                StartPosition = FormStartPosition.CenterScreen
+                StartPosition = FormStartPosition.CenterScreen,
+                BackColor = Color.LightBlue // Соответствие фону основной формы
             };
-            Label textLabel = new Label() { Left = 50, Top = 20, Text = text };
-            TextBox textBox = new TextBox() { Left = 50, Top = 50, Width = 400 };
-            Button confirmation = new Button() { Text = "Ok", Left = 350, Width = 100, Top = 70, DialogResult = DialogResult.OK };
+
+            Label textLabel = new Label()
+            {
+                Text = text,
+                Font = new Font("Arial", 12, FontStyle.Bold),
+                ForeColor = Color.White,
+                BackColor = Color.Transparent,
+                AutoSize = true,
+                TextAlign = ContentAlignment.MiddleCenter // Центрирование текста внутри метки
+            };
+
+            // Центрирование метки по форме
+            textLabel.Location = new Point(
+                (prompt.ClientSize.Width - textLabel.Width) / 2,
+                20
+            );
+
+            TextBox textBox = new TextBox()
+            {
+                Left = 20,
+                Top = textLabel.Bottom + 10,
+                Width = 340,
+                Font = new Font("Arial", 12)
+            };
+
+            Button confirmation = new Button()
+            {
+                Text = "Сохранить",
+                Left = (prompt.ClientSize.Width - 200) / 2,
+                Width = 200,
+                Top = textBox.Bottom + 10,
+                Height = 50,
+                DialogResult = DialogResult.OK,
+                BackColor = Color.LightGreen,
+                Font = new Font("Arial", 12, FontStyle.Bold),
+            };
+
             confirmation.Click += (sender, e) => { prompt.Close(); };
+
             prompt.Controls.Add(textLabel);
             prompt.Controls.Add(textBox);
             prompt.Controls.Add(confirmation);
             prompt.AcceptButton = confirmation;
+
+            // Обновление формы после добавления всех элементов
+            prompt.Resize += (s, e) =>
+            {
+                // Переустановка расположения метки, если размеры формы изменяются
+                textLabel.Location = new Point(
+                    (prompt.ClientSize.Width - textLabel.PreferredWidth) / 2,
+                    20
+                );
+                textBox.Left = (prompt.ClientSize.Width - textBox.Width) / 2;
+                confirmation.Left = (prompt.ClientSize.Width - confirmation.Width) / 2;
+            };
 
             return prompt.ShowDialog() == DialogResult.OK ? textBox.Text : "";
         }
