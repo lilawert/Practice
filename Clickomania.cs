@@ -14,6 +14,7 @@ namespace Clickomania
         private int timeLeft = 30; // время игры 30 секунд
         private System.Windows.Forms.Timer gameTimer; // уточнение пространства имен
         private List<(string name, int score)> scores = new List<(string name, int score)>();
+        private bool isPaused = false;
 
         public Form1()
         {
@@ -22,6 +23,7 @@ namespace Clickomania
             this.BackColor = Color.LightBlue; // Сплошной цвет фона
             ShowMainMenu();
             this.Resize += (s, e) => { RecenterMainMenu(); };
+            this.KeyDown += Form1_KeyDown;
         }
 
         private void LoadScores()
@@ -48,10 +50,10 @@ namespace Clickomania
             int centerX = (this.ClientSize.Width - buttonWidth) / 2;
             int startY = (this.ClientSize.Height - (buttonHeight * 3 + 20)) / 2;
 
-            // Создание и настройка кнопки "Start"
+            // Создание и настройка кнопки "Играть"
             Button startButton = new Button
             {
-                Text = "Start",
+                Text = "Играть",
                 Location = new System.Drawing.Point(centerX, startY),
                 BackColor = Color.LightGreen,
                 Font = new Font("Arial", 12, FontStyle.Bold),
@@ -96,7 +98,7 @@ namespace Clickomania
             {
                 if (control is Button)
                 {
-                    if (control.Text == "Start")
+                    if (control.Text == "Играть")
                     {
                         control.Location = new System.Drawing.Point(centerX, startY);
                     }
@@ -164,7 +166,7 @@ namespace Clickomania
 
         private void GameTimer_Tick(object sender, EventArgs e)
         {
-            if (timeLeft > 0)
+            if (!isPaused && timeLeft > 0)
             {
                 timeLeft--;
                 Controls["timerLabel"].Text = "Time left: " + timeLeft;
@@ -172,7 +174,7 @@ namespace Clickomania
                 // Добавьте логику появления объектов для кликов
                 CreateClickableObject();
             }
-            else
+            else if (timeLeft <= 0)
             {
                 gameTimer.Stop();
                 EnterNameAndSaveScore();
@@ -261,80 +263,160 @@ namespace Clickomania
                 int startY = title.Bottom + 10;
                 for (int i = 0; i < scores.Count; i++)
                 {
-                    Control scoreLabel = Controls.OfType<Label>().ElementAt(i + 1); // +1 чтобы пропустить заголовок
-                    scoreLabel.Location = new Point((this.ClientSize.Width - scoreLabel.Width) / 2, startY + i * 30);
+                    Label scoreLabel = Controls.OfType<Label>().Skip(i + 1).FirstOrDefault();
+                    if (scoreLabel != null)
+                    {
+                        scoreLabel.Location = new Point((this.ClientSize.Width - scoreLabel.Width) / 2, startY + i * 30);
+                    }
                 }
-                Control backButton = Controls.OfType<Button>().FirstOrDefault(b => b.Text == "Назад");
+
+                Button backButton = Controls.OfType<Button>().FirstOrDefault(b => b.Text == "Назад");
                 if (backButton != null)
                 {
-                    backButton.Location = new Point((this.ClientSize.Width - 100) / 2, startY + scores.Count * 30 + 10);
+                    backButton.Location = new Point((this.ClientSize.Width - backButton.Width) / 2, startY + scores.Count * 30 + 10);
                 }
             }
         }
 
         private void CreateClickableObject()
         {
-            Button clickableButton = new Button
+            PictureBox clickableObject = new PictureBox
             {
-                Text = "",
-                Size = new Size(50, 50),
-                FlatStyle = FlatStyle.Flat,
+                Size = new Size(50, 50), // Размер объекта
                 BackColor = Color.Transparent,
-                Location = new Point(random.Next(this.ClientSize.Width - 50), random.Next(this.ClientSize.Height - 50))
+                Location = new Point(random.Next(0, this.ClientSize.Width - 50), random.Next(0, this.ClientSize.Height - 50))
             };
-            clickableButton.FlatAppearance.BorderSize = 0;
-
-            // Создание кругов разного цвета
-            clickableButton.Paint += (s, e) =>
+            Bitmap targetBitmap = new Bitmap(clickableObject.Width, clickableObject.Height);
+            using (Graphics g = Graphics.FromImage(targetBitmap))
             {
-                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                e.Graphics.FillEllipse(Brushes.Red, 0, 0, 50, 50);
-                e.Graphics.FillEllipse(Brushes.White, 10, 10, 30, 30);
-                e.Graphics.FillEllipse(Brushes.Red, 20, 20, 10, 10);
-            };
-
-            clickableButton.Click += (s, e) =>
+                g.Clear(Color.Transparent); // Прозрачный фон
+                DrawTarget(g, clickableObject.Width / 2, clickableObject.Height / 2, clickableObject.Width / 2);
+            }
+            clickableObject.Image = targetBitmap;
+            clickableObject.Click += (s, e) =>
             {
                 score++;
                 Controls["scoreLabel"].Text = "Score: " + score;
-                Controls.Remove(clickableButton);
+                Controls.Remove(clickableObject);
             };
-            Controls.Add(clickableButton);
+            Controls.Add(clickableObject);
         }
 
-        public static class Prompt
+        private void DrawTarget(Graphics g, int centerX, int centerY, int radius)
         {
-            public static string ShowDialog(string text, string caption)
+            Color[] colors = { Color.Red, Color.White, Color.Red, Color.White, Color.Red }; // Чередующиеся цвета
+            for (int i = 0; i < colors.Length; i++)
             {
-                Form prompt = new Form
+                using (SolidBrush brush = new SolidBrush(colors[i]))
                 {
-                    Width = 400,
-                    Height = 200,
-                    FormBorderStyle = FormBorderStyle.FixedDialog,
-                    Text = caption,
-                    StartPosition = FormStartPosition.CenterScreen,
-                    BackColor = Color.FromArgb(34, 34, 34)
-                };
-                Label textLabel = new Label() { Left = 50, Top = 20, Text = text, ForeColor = Color.White, AutoSize = true };
-                TextBox textBox = new TextBox() { Left = 50, Top = 50, Width = 300, Font = new Font("Arial", 12, FontStyle.Regular) };
-                Button confirmation = new Button()
-                {
-                    Text = "OK",
-                    Left = 150,
-                    Width = 100,
-                    Top = 100,
-                    DialogResult = DialogResult.OK,
-                    BackColor = Color.LightGreen,
-                    Font = new Font("Arial", 12, FontStyle.Bold)
-                };
-                confirmation.Click += (sender, e) => { prompt.Close(); };
-                prompt.Controls.Add(textBox);
-                prompt.Controls.Add(confirmation);
-                prompt.Controls.Add(textLabel);
-                prompt.AcceptButton = confirmation;
-
-                return prompt.ShowDialog() == DialogResult.OK ? textBox.Text : "";
+                    int currentRadius = radius - (radius / colors.Length) * i;
+                    g.FillEllipse(brush, centerX - currentRadius, centerY - currentRadius, currentRadius * 2, currentRadius * 2);
+                }
             }
+        }
+
+        private void Form1_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Escape)
+            {
+                TogglePauseMenu();
+            }
+        }
+
+        private void TogglePauseMenu()
+        {
+            if (isPaused)
+            {
+                foreach (Control control in Controls.OfType<Button>().Where(b => b.Text == "Продолжить" || b.Text == "Главное меню" || b.Text == "Выход"))
+                {
+                    control.Visible = false;
+                }
+                gameTimer.Start();
+                isPaused = false;
+            }
+            else
+            {
+                gameTimer.Stop();
+                ShowPauseMenu();
+                isPaused = true;
+            }
+        }
+
+        private void ShowPauseMenu()
+        {
+            int buttonWidth = 200;
+            int buttonHeight = 50;
+            int centerX = (this.ClientSize.Width - buttonWidth) / 2;
+            int startY = (this.ClientSize.Height - (buttonHeight * 3 + 20)) / 2;
+
+            // Создание и настройка кнопки "Продолжить"
+            Button continueButton = new Button
+            {
+                Text = "Продолжить",
+                Location = new System.Drawing.Point(centerX, startY),
+                BackColor = Color.LightGreen,
+                Font = new Font("Arial", 12, FontStyle.Bold),
+                Size = new Size(buttonWidth, buttonHeight),
+                Visible = true
+            };
+            continueButton.Click += (s, e) => TogglePauseMenu();
+            Controls.Add(continueButton);
+
+            // Создание и настройка кнопки "Главное меню"
+            Button mainMenuButton = new Button
+            {
+                Text = "Главное меню",
+                Location = new System.Drawing.Point(centerX, startY + buttonHeight + 10),
+                BackColor = Color.LightBlue,
+                Font = new Font("Arial", 12, FontStyle.Bold),
+                Size = new Size(buttonWidth, buttonHeight),
+                Visible = true
+            };
+            mainMenuButton.Click += (s, e) =>
+            {
+                isPaused = false;
+                ShowMainMenu();
+            };
+            Controls.Add(mainMenuButton);
+
+            // Создание и настройка кнопки "Выход"
+            Button exitButton = new Button
+            {
+                Text = "Выход",
+                Location = new System.Drawing.Point(centerX, startY + (buttonHeight + 10) * 2),
+                BackColor = Color.LightCoral,
+                Font = new Font("Arial", 12, FontStyle.Bold),
+                Size = new Size(buttonWidth, buttonHeight),
+                Visible = true
+            };
+            exitButton.Click += (s, e) => this.Close();
+            Controls.Add(exitButton);
+        }
+    }
+
+    // Вспомогательный класс для ввода имени
+    public static class Prompt
+    {
+        public static string ShowDialog(string text, string caption)
+        {
+            Form prompt = new Form
+            {
+                Width = 500,
+                Height = 150,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                Text = caption,
+                StartPosition = FormStartPosition.CenterScreen
+            };
+            Label textLabel = new Label() { Left = 50, Top = 20, Text = text };
+            TextBox textBox = new TextBox() { Left = 50, Top = 50, Width = 400 };
+            Button confirmation = new Button() { Text = "Ok", Left = 350, Width = 100, Top = 70, DialogResult = DialogResult.OK };
+            confirmation.Click += (sender, e) => { prompt.Close(); };
+            prompt.Controls.Add(textLabel);
+            prompt.Controls.Add(textBox);
+            prompt.Controls.Add(confirmation);
+            prompt.AcceptButton = confirmation;
+
+            return prompt.ShowDialog() == DialogResult.OK ? textBox.Text : "";
         }
     }
 }
