@@ -4,6 +4,8 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
+using System.Media;
+
 
 namespace Clickomania
 {
@@ -15,6 +17,10 @@ namespace Clickomania
         private System.Windows.Forms.Timer gameTimer; // уточнение пространства имен
         private List<(string name, int score)> scores = new List<(string name, int score)>();
         private bool isPaused = false;
+        private SoundPlayer backgroundMusicPlayer;
+        private bool isMusicPlaying = true;
+        private Button musicToggleButton;
+        private Panel dimPanel;
 
         public Form1()
         {
@@ -25,6 +31,9 @@ namespace Clickomania
             ShowMainMenu();
             this.Resize += (s, e) => { RecenterMainMenu(); };
             this.KeyDown += Form1_KeyDown;
+            backgroundMusicPlayer = new SoundPlayer("dystopia.wav");
+            backgroundMusicPlayer.PlayLooping(); // Запуск музыки в цикле
+            InitializeDimPanel(); // Инициализация панели затемнения
         }
 
         private void LoadScores()
@@ -86,6 +95,47 @@ namespace Clickomania
             };
             exitButton.Click += (s, e) => this.Close();
             Controls.Add(exitButton);
+
+            // Создание и настройка кнопки управления музыкой
+            musicToggleButton = new Button
+            {
+                Size = new Size(50, 50),
+                Location = new Point(10, this.ClientSize.Height - 60),
+                BackColor = Color.LightPink,
+                BackgroundImageLayout = ImageLayout.Zoom
+            };
+            musicToggleButton.BackgroundImage = Resources.soundon; // Иконка микрофона
+            musicToggleButton.Click += musicToggleButton_Click;
+            Controls.Add(musicToggleButton);
+
+            // Установка привязки кнопки к левому нижнему углу
+            musicToggleButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+
+            // Обработка изменения размера формы
+            this.Resize += (s, e) =>
+            {
+                // Обновление расположения кнопки в случае изменения размера формы
+                musicToggleButton.Location = new Point(10, this.ClientSize.Height - musicToggleButton.Height - 10);
+            };
+
+            Label footerLabel = new Label
+            {
+                Text = "by Terai <33",
+                Font = new Font("Arial", 10, FontStyle.Bold),
+                ForeColor = Color.White,
+                BackColor = Color.Transparent,
+                AutoSize = true,
+                TextAlign = ContentAlignment.MiddleRight
+            };
+
+            footerLabel.Location = new Point(this.ClientSize.Width - footerLabel.Width - 10, this.ClientSize.Height - footerLabel.Height - 10);
+            Controls.Add(footerLabel);
+
+            // Обработка изменения размера формы
+            this.Resize += (s, e) =>
+            {
+                footerLabel.Location = new Point(this.ClientSize.Width - footerLabel.Width - 10, this.ClientSize.Height - footerLabel.Height - 10);
+            };
         }
 
         private void RecenterMainMenu()
@@ -115,6 +165,22 @@ namespace Clickomania
             }
         }
 
+        private void ToggleMusic()
+        {
+            if (isMusicPlaying)
+            {
+                backgroundMusicPlayer.Stop();
+                musicToggleButton.BackgroundImage = Resources.soundoff; // Иконка зачеркнутого микрофона
+                // Обновите текст кнопки или другой элемент интерфейса, чтобы показать, что музыка выключена
+            }
+            else
+            {
+                backgroundMusicPlayer.PlayLooping();
+                musicToggleButton.BackgroundImage = Resources.soundon; // Иконка микрофона
+            }
+            isMusicPlaying = !isMusicPlaying;
+        }
+
         private void StartButton_Click(object sender, EventArgs e)
         {
             InitializeGame();
@@ -123,6 +189,11 @@ namespace Clickomania
         private void ScoresButton_Click(object sender, EventArgs e)
         {
             ShowScores();
+        }
+
+        private void musicToggleButton_Click(object sender, EventArgs e)
+        {
+            ToggleMusic();
         }
 
         private void InitializeGame()
@@ -337,27 +408,31 @@ namespace Clickomania
             }
         }
 
-        private void TogglePauseMenu()
+        private void InitializeDimPanel()
         {
-            if (isPaused)
+            dimPanel = new Panel
             {
-                foreach (Control control in Controls.OfType<Button>().Where(b => b.Text == "Продолжить" || b.Text == "Главное меню" || b.Text == "Выход"))
-                {
-                    control.Visible = false;
-                }
-                gameTimer.Start();
-                isPaused = false;
-            }
-            else
-            {
-                gameTimer.Stop();
-                ShowPauseMenu();
-                isPaused = true;
-            }
+                BackColor = Color.FromArgb(128, 0, 0, 0), // Полупрозрачный черный
+                Size = this.ClientSize,
+                Location = new Point(0, 0),
+                Visible = false // Сначала скрыт
+            };
+            this.Controls.Add(dimPanel);
+            this.Resize += (s, e) => dimPanel.Size = this.ClientSize; // Подгонка размера при изменении размеров формы
         }
 
         private void ShowPauseMenu()
         {
+
+            // Отображение панели затемнения
+            dimPanel.Visible = true;
+            this.Controls.Add(dimPanel); // Принудительно добавляем на передний план
+            dimPanel.BringToFront(); // Перемещение панели на передний план
+            dimPanel.Controls.Clear();
+
+            // Очистка панели перед добавлением новых кнопок
+            dimPanel.Controls.Clear();
+
             int buttonWidth = 200;
             int buttonHeight = 50;
             int centerX = (this.ClientSize.Width - buttonWidth) / 2;
@@ -370,11 +445,10 @@ namespace Clickomania
                 Location = new System.Drawing.Point(centerX, startY),
                 BackColor = Color.LightGreen,
                 Font = new Font("Arial", 12, FontStyle.Bold),
-                Size = new Size(buttonWidth, buttonHeight),
-                Visible = true
+                Size = new Size(buttonWidth, buttonHeight)
             };
             continueButton.Click += (s, e) => TogglePauseMenu();
-            Controls.Add(continueButton);
+            dimPanel.Controls.Add(continueButton);
 
             // Создание и настройка кнопки "Главное меню"
             Button mainMenuButton = new Button
@@ -383,15 +457,15 @@ namespace Clickomania
                 Location = new System.Drawing.Point(centerX, startY + buttonHeight + 10),
                 BackColor = Color.LightBlue,
                 Font = new Font("Arial", 12, FontStyle.Bold),
-                Size = new Size(buttonWidth, buttonHeight),
-                Visible = true
+                Size = new Size(buttonWidth, buttonHeight)
             };
             mainMenuButton.Click += (s, e) =>
             {
                 isPaused = false;
+                dimPanel.Visible = false; // Скрытие панели затемнения
                 ShowMainMenu();
             };
-            Controls.Add(mainMenuButton);
+            dimPanel.Controls.Add(mainMenuButton);
 
             // Создание и настройка кнопки "Выход"
             Button exitButton = new Button
@@ -401,10 +475,28 @@ namespace Clickomania
                 BackColor = Color.LightCoral,
                 Font = new Font("Arial", 12, FontStyle.Bold),
                 Size = new Size(buttonWidth, buttonHeight),
-                Visible = true
             };
             exitButton.Click += (s, e) => this.Close();
-            Controls.Add(exitButton);
+            dimPanel.Controls.Add(exitButton);
+
+            // Убедитесь, что кнопки находятся поверх панели затемнения
+            dimPanel.BringToFront();
+        }
+
+        private void TogglePauseMenu()
+        {
+            if (isPaused)
+            {
+                gameTimer.Start();
+                isPaused = false;
+                dimPanel.Visible = false; // Скрытие панели затемнения
+            }
+            else
+            {
+                gameTimer.Stop();
+                ShowPauseMenu();
+                isPaused = true;
+            }
         }
     }
 
@@ -433,11 +525,15 @@ namespace Clickomania
                 TextAlign = ContentAlignment.MiddleCenter // Центрирование текста внутри метки
             };
 
-            // Центрирование метки по форме
-            textLabel.Location = new Point(
-                (prompt.ClientSize.Width - textLabel.Width) / 2,
-                20
-            );
+            // Использование MeasureString для вычисления точной ширины текста
+            using (Graphics g = prompt.CreateGraphics())
+            {
+                SizeF textSize = g.MeasureString(textLabel.Text, textLabel.Font);
+                textLabel.Location = new Point(
+                    (prompt.ClientSize.Width - (int)textSize.Width) / 2,
+                    20
+                );
+            }
 
             TextBox textBox = new TextBox()
             {
@@ -469,11 +565,14 @@ namespace Clickomania
             // Обновление формы после добавления всех элементов
             prompt.Resize += (s, e) =>
             {
-                // Переустановка расположения метки, если размеры формы изменяются
-                textLabel.Location = new Point(
-                    (prompt.ClientSize.Width - textLabel.PreferredWidth) / 2,
-                    20
-                );
+                using (Graphics g = prompt.CreateGraphics())
+                {
+                    SizeF textSize = g.MeasureString(textLabel.Text, textLabel.Font);
+                    textLabel.Location = new Point(
+                        (prompt.ClientSize.Width - (int)textSize.Width) / 2,
+                        20
+                    );
+                }
                 textBox.Left = (prompt.ClientSize.Width - textBox.Width) / 2;
                 confirmation.Left = (prompt.ClientSize.Width - confirmation.Width) / 2;
             };
