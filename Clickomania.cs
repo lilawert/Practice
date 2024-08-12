@@ -21,6 +21,8 @@ namespace Clickomania
         private bool isMusicPlaying = true;
         private Button musicToggleButton;
         private Panel dimPanel;
+        private List<PictureBox> backgroundThumbnails = new List<PictureBox>();
+        private Image[] backgroundImages = new Image[5]; // Массив для хранения фоновых изображений
 
         public Form1()
         {
@@ -28,6 +30,7 @@ namespace Clickomania
             this.Text = "Кликомания!"; // Установка заголовка формы
             LoadScores();
             this.BackColor = Color.LightBlue; // Сплошной цвет фона
+            LoadBackgroundImages(); // Загрузка фонов
             ShowMainMenu();
             this.Resize += (s, e) => { RecenterMainMenu(); };
             this.KeyDown += Form1_KeyDown;
@@ -52,9 +55,29 @@ namespace Clickomania
             }
         }
 
+        private void LoadBackgroundImages()
+        {
+            backgroundImages[0] = Resources.background1; // Измените на имя ваших ресурсов
+            backgroundImages[1] = Resources.background2;
+            backgroundImages[2] = Resources.background3;
+            backgroundImages[3] = Resources.background4;
+            backgroundImages[4] = Resources.background5;
+        }
+
+        private void ClearBackgroundThumbnails()
+        {
+            foreach (var thumbnail in backgroundThumbnails)
+            {
+                Controls.Remove(thumbnail);
+                thumbnail.Dispose(); // Освобождение ресурсов
+            }
+            backgroundThumbnails.Clear();
+        }
+
         private void ShowMainMenu()
         {
             Controls.Clear();
+            ClearBackgroundThumbnails(); // Очистка старых миниатюр
             int buttonWidth = 200;
             int buttonHeight = 50;
             int centerX = (this.ClientSize.Width - buttonWidth) / 2;
@@ -118,6 +141,36 @@ namespace Clickomania
                 musicToggleButton.Location = new Point(10, this.ClientSize.Height - musicToggleButton.Height - 10);
             };
 
+            // Загрузка и размещение новых миниатюр
+            LoadBackgroundThumbnails();
+
+            // Подпись "Выберите фон"
+            Label chooseBackgroundLabel = new Label
+            {
+                Text = "Выберите фон",
+                Font = new Font("Arial", 10, FontStyle.Bold),
+                ForeColor = Color.White,
+                BackColor = Color.Transparent,
+                AutoSize = true,
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+            Controls.Add(chooseBackgroundLabel);
+
+            // Миниатюры фонов
+            int thumbnailWidth = 40;
+            int thumbnailHeight = 40;
+            int thumbnailSpacing = 10; // Расстояние между миниатюрами
+
+            // Перемещение элементов в методе обработки изменения размера
+            this.Resize += (s, e) =>
+            {
+                RecenterMainMenu();
+                RepositionBackgroundElements(chooseBackgroundLabel, thumbnailWidth, thumbnailHeight, thumbnailSpacing);
+            };
+
+            // Изначальное размещение элементов
+            RepositionBackgroundElements(chooseBackgroundLabel, thumbnailWidth, thumbnailHeight, thumbnailSpacing);
+
             Label footerLabel = new Label
             {
                 Text = "by Terai <33",
@@ -136,6 +189,60 @@ namespace Clickomania
             {
                 footerLabel.Location = new Point(this.ClientSize.Width - footerLabel.Width - 10, this.ClientSize.Height - footerLabel.Height - 10);
             };
+        }
+
+        private void LoadBackgroundThumbnails()
+        {
+            int thumbnailWidth = 40;
+            int thumbnailHeight = 40;
+            int thumbnailSpacing = 10;
+
+            for (int i = 0; i < backgroundImages.Length; i++)
+            {
+                PictureBox thumbnail = new PictureBox
+                {
+                    Image = backgroundImages[i],
+                    Size = new Size(thumbnailWidth, thumbnailHeight),
+                    SizeMode = PictureBoxSizeMode.StretchImage,
+                    BorderStyle = BorderStyle.FixedSingle
+                };
+
+                // Создание локальной копии переменной `i`
+                int index = i;
+
+                thumbnail.Click += (s, e) =>
+                {
+                    ApplyBackground(backgroundImages[index]);
+                };
+
+                backgroundThumbnails.Add(thumbnail);
+                Controls.Add(thumbnail);
+            }
+        }
+
+        private void RepositionBackgroundElements(Label chooseBackgroundLabel, int thumbnailWidth, int thumbnailHeight, int thumbnailSpacing)
+        {
+            int thumbnailCount = backgroundThumbnails.Count;
+            int totalThumbnailWidth = thumbnailWidth * thumbnailCount + thumbnailSpacing * (thumbnailCount - 1);
+
+            // Позиция миниатюр и подписи
+            int startX = (this.ClientSize.Width - totalThumbnailWidth) / 2;
+            int startY = this.ClientSize.Height - thumbnailHeight - 20;
+
+            // Позиция подписи
+            chooseBackgroundLabel.Location = new Point((this.ClientSize.Width - chooseBackgroundLabel.Width) / 2, startY - chooseBackgroundLabel.Height - 10);
+
+            // Позиция миниатюр
+            for (int i = 0; i < backgroundThumbnails.Count; i++)
+            {
+                backgroundThumbnails[i].Location = new Point(startX + i * (thumbnailWidth + thumbnailSpacing), startY);
+            }
+        }
+
+        private void ApplyBackground(Image backgroundImage)
+        {
+            this.BackgroundImage = backgroundImage;
+            this.BackgroundImageLayout = ImageLayout.Stretch; // или другой режим размещения
         }
 
         private void RecenterMainMenu()
@@ -320,12 +427,24 @@ namespace Clickomania
                 scoresPanel.Controls.Add(scoreLabel);
             }
 
+            // Кнопка "Очистить рейтинг"
+            Button clearButton = new Button
+            {
+                Text = "Очистить рейтинг",
+                Location = new System.Drawing.Point((this.ClientSize.Width - 100) / 2, title.Bottom + 10 + scores.Count * 30 + 10),
+                BackColor = Color.LightGreen,
+                Font = new Font("Arial", 12, FontStyle.Bold),
+                Size = new Size(200, 50)
+            };
+            clearButton.Click += ClearScores;
+            scoresPanel.Controls.Add(clearButton);
+
             // Кнопка "Назад"
             Button backButton = new Button
             {
                 Text = "Назад",
-                Location = new System.Drawing.Point((this.ClientSize.Width - 100) / 2, title.Bottom + 10 + scores.Count * 30 + 10),
-                BackColor = Color.LightGreen,
+                Location = new System.Drawing.Point((this.ClientSize.Width - 150) / 2, clearButton.Bottom + 10),
+                BackColor = Color.LightCoral,
                 Font = new Font("Arial", 12, FontStyle.Bold),
                 Size = new Size(100, 50)
             };
@@ -336,6 +455,16 @@ namespace Clickomania
             CenterPanelContent(scoresPanel);
 
             this.Resize += (s, e) => { CenterPanelContent(scoresPanel); };
+        }
+
+        private void ClearScores(object sender, EventArgs e)
+        {
+            scores.Clear();
+            if (File.Exists("scores.txt"))
+            {
+                File.Delete("scores.txt");
+            }
+            ShowScores(); // Обновление экрана с рейтингом
         }
 
         private void CenterPanelContent(Panel panel)
