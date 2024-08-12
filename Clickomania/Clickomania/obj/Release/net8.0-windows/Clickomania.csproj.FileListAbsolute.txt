@@ -1,0 +1,17 @@
+C:\Users\tusup\OneDrive\Рабочий стол\Clickomania\Clickomania\bin\Release\net8.0-windows\Clickomania.exe
+C:\Users\tusup\OneDrive\Рабочий стол\Clickomania\Clickomania\bin\Release\net8.0-windows\Clickomania.deps.json
+C:\Users\tusup\OneDrive\Рабочий стол\Clickomania\Clickomania\bin\Release\net8.0-windows\Clickomania.runtimeconfig.json
+C:\Users\tusup\OneDrive\Рабочий стол\Clickomania\Clickomania\bin\Release\net8.0-windows\Clickomania.dll
+C:\Users\tusup\OneDrive\Рабочий стол\Clickomania\Clickomania\bin\Release\net8.0-windows\Clickomania.pdb
+C:\Users\tusup\OneDrive\Рабочий стол\Clickomania\Clickomania\obj\Release\net8.0-windows\Clickomania.Form1.resources
+C:\Users\tusup\OneDrive\Рабочий стол\Clickomania\Clickomania\obj\Release\net8.0-windows\Clickomania.Resources.resources
+C:\Users\tusup\OneDrive\Рабочий стол\Clickomania\Clickomania\obj\Release\net8.0-windows\Clickomania.csproj.GenerateResource.cache
+C:\Users\tusup\OneDrive\Рабочий стол\Clickomania\Clickomania\obj\Release\net8.0-windows\Clickomania.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\tusup\OneDrive\Рабочий стол\Clickomania\Clickomania\obj\Release\net8.0-windows\Clickomania.AssemblyInfoInputs.cache
+C:\Users\tusup\OneDrive\Рабочий стол\Clickomania\Clickomania\obj\Release\net8.0-windows\Clickomania.AssemblyInfo.cs
+C:\Users\tusup\OneDrive\Рабочий стол\Clickomania\Clickomania\obj\Release\net8.0-windows\Clickomania.csproj.CoreCompileInputs.cache
+C:\Users\tusup\OneDrive\Рабочий стол\Clickomania\Clickomania\obj\Release\net8.0-windows\Clickomania.dll
+C:\Users\tusup\OneDrive\Рабочий стол\Clickomania\Clickomania\obj\Release\net8.0-windows\refint\Clickomania.dll
+C:\Users\tusup\OneDrive\Рабочий стол\Clickomania\Clickomania\obj\Release\net8.0-windows\Clickomania.pdb
+C:\Users\tusup\OneDrive\Рабочий стол\Clickomania\Clickomania\obj\Release\net8.0-windows\Clickomania.genruntimeconfig.cache
+C:\Users\tusup\OneDrive\Рабочий стол\Clickomania\Clickomania\obj\Release\net8.0-windows\ref\Clickomania.dll
